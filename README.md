@@ -1,4 +1,4 @@
-[Upl<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +6,8 @@
     <title>TEIKI ESPACES - Coworking à Pirae, Tahiti</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=test&currency=XPF"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         
@@ -131,6 +133,25 @@
             border-color: #10b981;
             box-shadow: 0 0 0 2px #6ee7b7;
         }
+
+        /* Styles pour le paiement */
+        .payment-method {
+            transition: all 0.2s ease;
+        }
+
+        .payment-method:hover {
+            transform: translateY(-2px);
+        }
+
+        .payment-method.selected {
+            border-color: #10b981;
+            box-shadow: 0 0 0 2px #6ee7b7;
+        }
+
+        #paypal-button-container {
+            margin-top: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -145,7 +166,7 @@
                     </div>
                 </div>
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="#accueil" class="nav-link active-nav text-gray-800 font-medium">Accueil</a>
+                    <a href="#accueil" class="nav-link active-nav text-gray-800 font-medium">Acceuil</a>
                     <a href="#espaces" class="nav-link text-gray-800 font-medium">Nos espaces</a>
                     <a href="#services" class="nav-link text-gray-800 font-medium">Services</a>
                     <a href="#tarifs" class="nav-link text-gray-800 font-medium">Tarifs</a>
@@ -167,7 +188,7 @@
         <div class="container mx-auto px-6">
             <div class="flex flex-col md:flex-row items-center">
                 <div class="md:w-1/2 mb-10 md:mb-0">
-                    <h1 class="text-4xl md:text-5xl font-bold mb-6">Votre espace de coworking à Tahiti</h1>
+                    <h1 class="text-4xl md:text-5xl font-bold mb-6">Votre espace de coworking à Pirae</h1>
                     <p class="text-xl mb-8">TEIKI ESPACES vous offre un environnement de travail inspirant et connecté au cœur de Pirae, avec des espaces intérieurs et extérieurs.</p>
                     <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                         <a href="#contact" class="btn-primary text-white font-bold py-3 px-6 rounded-lg text-center">Réserver une visite</a>
@@ -185,7 +206,7 @@
     <section class="py-16 bg-white">
         <div class="container mx-auto px-6">
             <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold text-gray-800 mb-4">Pourquoi choisir TEIKI ESPACES ?</h2>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Pourquoi nous TEIKI ESPACES ?</h2>
                 <div class="w-20 h-1 bg-green-500 mx-auto"></div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -201,7 +222,7 @@
                         <i class="fas fa-umbrella-beach"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-3">Espaces extérieurs</h3>
-                    <p class="text-gray-600">Profitez de nos espaces de travail en plein air avec vue sur le jardin tropical.</p>
+                    <p class="text-gray-600">Profitez de nos espaces de travail en plein air avec connexion rapide et fiable</p>
                 </div>
                 <div class="feature-card bg-gray-50 p-8 rounded-lg shadow-md transition duration-300">
                     <div class="text-green-500 text-4xl mb-4">
@@ -273,7 +294,7 @@
                     </div>
                     <div>
                         <h3 class="text-xl font-bold text-gray-800 mb-2">Impression et numérisation</h3>
-                        <p class="text-gray-600">Accès à des imprimantes professionnelles et service de numérisation de documents.</p>
+                    <p class="text-gray-600">Accès à des imprimantes professionnelles et service de numérisation de documents.</p>
                     </div>
                 </div>
                 <div class="flex items-start">
@@ -546,6 +567,21 @@
                                 <span id="selected-price">0 XPF</span>
                             </div>
                         </div>
+
+                        <h4 class="font-bold text-gray-800 mb-3">Méthode de paiement</h4>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="payment-method p-3 border-2 border-gray-200 rounded-lg cursor-pointer text-center" onclick="selectPaymentMethod(this, 'card')">
+                                <i class="fas fa-credit-card text-green-600 mb-1"></i>
+                                <p class="text-sm">Carte bancaire</p>
+                            </div>
+                            <div class="payment-method p-3 border-2 border-gray-200 rounded-lg cursor-pointer text-center" onclick="selectPaymentMethod(this, 'paypal')">
+                                <i class="fab fa-paypal text-blue-500 mb-1"></i>
+                                <p class="text-sm">PayPal</p>
+                            </div>
+                        </div>
+
+                        <!-- PayPal Button Container -->
+                        <div id="paypal-button-container"></div>
                         
                         <button id="confirm-booking" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded hover:bg-green-600 transition opacity-50 cursor-not-allowed" disabled>
                             Confirmer la réservation
@@ -922,6 +958,75 @@
             checkReservationComplete();
         }
 
+        // Payment method selection
+        function selectPaymentMethod(element, method) {
+            // Remove selected class from all payment methods
+            document.querySelectorAll('.payment-method').forEach(pm => {
+                pm.classList.remove('selected');
+                pm.classList.remove('border-green-500');
+                pm.classList.add('border-gray-200');
+            });
+            
+            // Add selected class to clicked payment method
+            element.classList.add('selected');
+            element.classList.remove('border-gray-200');
+            element.classList.add('border-green-500');
+            
+            // Handle PayPal button display
+            const paypalButtonContainer = document.getElementById('paypal-button-container');
+            
+            if (method === 'paypal') {
+                paypalButtonContainer.style.display = 'block';
+                document.getElementById('confirm-booking').style.display = 'none';
+                
+                // Initialize PayPal button if not already done
+                if (!window.paypalButtonInitialized) {
+                    renderPayPalButton();
+                    window.paypalButtonInitialized = true;
+                }
+            } else {
+                paypalButtonContainer.style.display = 'none';
+                document.getElementById('confirm-booking').style.display = 'block';
+            }
+        }
+
+        // Render PayPal button
+        function renderPayPalButton() {
+            paypal.Buttons({
+                createOrder: function(data, actions) {
+                    // Get the selected price
+                    const priceText = document.getElementById('selected-price').textContent;
+                    const price = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+                    
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: {
+                                value: price.toFixed(2),
+                                currency_code: 'XPF'
+                            },
+                            description: 'Réservation TEIKI ESPACES - ' + 
+                                         document.getElementById('selected-room').textContent + ' - ' +
+                                         document.getElementById('selected-date').textContent + ' ' +
+                                         document.getElementById('selected-time').textContent
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(function(details) {
+                        // Show success message
+                        alert('Paiement effectué avec succès! ID de transaction: ' + details.id);
+                        
+                        // Complete the reservation
+                        completeReservation('PayPal - ' + details.id);
+                    });
+                },
+                onError: function(err) {
+                    console.error('Erreur PayPal:', err);
+                    alert('Une erreur est survenue lors du paiement. Veuillez réessayer ou choisir une autre méthode de paiement.');
+                }
+            }).render('#paypal-button-container');
+        }
+
         // Update price based on selection
         function updatePrice() {
             const roomElement = document.querySelector('.room-option.selected');
@@ -956,10 +1061,17 @@
             const timeSelected = document.querySelector('.time-slot.selected');
             const dateSelected = document.getElementById('reservation-date').value;
             const peopleSelected = document.getElementById('people-select').value;
+            const paymentSelected = document.querySelector('.payment-method.selected');
             
-            if (roomSelected && timeSelected && dateSelected && peopleSelected) {
-                document.getElementById('confirm-booking').disabled = false;
-                document.getElementById('confirm-booking').classList.remove('opacity-50', 'cursor-not-allowed');
+            if (roomSelected && timeSelected && dateSelected && peopleSelected && paymentSelected) {
+                if (paymentSelected.textContent.includes('PayPal')) {
+                    // PayPal will handle the payment
+                    return;
+                } else {
+                    // Regular payment method
+                    document.getElementById('confirm-booking').disabled = false;
+                    document.getElementById('confirm-booking').classList.remove('opacity-50', 'cursor-not-allowed');
+                }
                 
                 // Update summary with date and people
                 document.getElementById('selected-date').textContent = formatDate(dateSelected);
@@ -986,16 +1098,21 @@
             checkReservationComplete();
         });
 
-        // Confirm booking button
-        document.getElementById('confirm-booking').addEventListener('click', function() {
+        // Complete reservation function
+        function completeReservation(paymentMethod) {
             const room = document.getElementById('selected-room').textContent;
             const date = document.getElementById('selected-date').textContent;
             const time = document.getElementById('selected-time').textContent;
             const people = document.getElementById('selected-people').textContent;
             const price = document.getElementById('selected-price').textContent;
             
-            alert(`Réservation confirmée!\n\nEspace: ${room}\nDate: ${date}\nHoraire: ${time}\nPersonnes: ${people}\nTotal: ${price}\n\nMerci pour votre réservation!`);
+            alert(`Merci pour votre réservation\n\nEspace: ${room}\nDate: ${date}\nHoraire: ${time}\nPersonnes: ${people}\nTotal: ${price}\nMéthode de paiement: ${paymentMethod}\n\nMerci pour votre réservation!`);
+        }
+
+        // Confirm booking button
+        document.getElementById('confirm-booking').addEventListener('click', function() {
+            completeReservation('Carte bancaire');
         });
     </script>
 </body>
-</html>oading Teiki-espaces.html…]()
+</html>
